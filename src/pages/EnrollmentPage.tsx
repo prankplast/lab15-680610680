@@ -12,29 +12,43 @@ export default function Enrollment() {
     currentStudent.courses ?? []
   );
 
-  function handleRegister(courseId: string) {
-    setEnrolledCourseIds((prev) => {
-      // ป้องกันการลงทะเบียนซ้ำ
-      if (prev.includes(courseId)) {
-        return prev;
-      }
+  const [enrolledTimes, setEnrolledTimes] = useState<
+    Record<string, string>
+  >(() => {
+    const initial: Record<string, string> = {};
 
-      return [...prev, courseId];
-    });
+    enrollments
+      .filter(
+        (enrollment) =>
+          enrollment.studentId === currentStudent.studentId
+      )
+      .forEach((enrollment) => {
+        initial[enrollment.courseId] =
+          enrollment.enrolledAt ?? "";
+      });
+
+    return initial;
+  });
+
+  function handleRegister(courseId: string, time: string) {
+    setEnrolledCourseIds((prev) => [...prev, courseId]);
+
+    setEnrolledTimes((prev) => ({
+      ...prev,
+      [courseId]: time,
+    }));
   }
 
   function handleUnregister(courseId: string) {
     setEnrolledCourseIds((prev) =>
       prev.filter((id) => id !== courseId)
     );
-  }
 
-  function getEnrolledAt(courseId: string) {
-    return enrollments.find(
-      (enrollment) =>
-        enrollment.studentId === currentStudent.studentId &&
-        enrollment.courseId === courseId
-    )?.enrolledAt;
+    setEnrolledTimes((prev) => {
+      const updated = { ...prev };
+      delete updated[courseId];
+      return updated;
+    });
   }
 
   return (
@@ -64,7 +78,7 @@ export default function Enrollment() {
               course={course}
               student={currentStudent}
               isEnrolled={isEnrolled}
-              enrolledAt={getEnrolledAt(course.courseId)}
+              enrolledAt={enrolledTimes[course.courseId]}
               onUnregister={handleUnregister}
             />
           );
