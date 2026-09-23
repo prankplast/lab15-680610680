@@ -13,18 +13,27 @@ export default function RootLayout() {
   return (
     <SidebarProvider>
       <AppSidebar />
+
       <SidebarInset>
         <header className="flex h-14 items-center justify-between gap-2 border-b px-4">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
             <Separator orientation="vertical" className="h-4" />
-            <span className="text-sm font-medium">ระบบลงทะเบียนเรียน</span>
+            <span className="text-sm font-medium">
+              ระบบลงทะเบียนเรียน
+            </span>
           </div>
+
           <ModeToggle />
         </header>
+
         <main className="flex-1 p-4">
           <Outlet />
         </main>
+
+        <footer className="border-t px-4 py-3 text-center text-sm text-muted-foreground">
+          Made by: ธนานพ ปัญญามูลวงษา · รหัสนักศึกษา: 680610680
+        </footer>
       </SidebarInset>
     </SidebarProvider>
   );

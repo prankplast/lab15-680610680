@@ -9,51 +9,148 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function RegisterDialog() {
-  const [open, setOpen] = useState(false); // true = แสดง Dialog
-  const [courseId, setCourseId] = useState("");
+import type { Course } from "@/lib/types";
+import { courses, currentStudent } from "@/lib/mock-data";
 
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
-    e.preventDefault(); // ไม่ให้หน้าเว็บ reload
-    setCourseId(""); // เคลียร์ฟอร์ม
-    setOpen(false); // ปิด Dialog
+function getCurrentTime() {
+  const now = new Date();
+
+  return `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes()
+  ).padStart(2, "0")}`;
+}
+
+interface RegisterDialogProps {
+  enrolledCourseIds: string[];
+  onRegister: (courseId: string, time: string) => void;
+}
+
+export function RegisterDialog({
+  enrolledCourseIds,
+  onRegister,
+}: RegisterDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [time, setTime] = useState(getCurrentTime());
+
+  const availableCourses = courses.filter(
+    (course) => !enrolledCourseIds.includes(course.courseId)
+  );
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (!selectedCourse) return;
+
+    const now = new Date();
+    const [hours, minutes] = time.split(":");
+
+    now.setHours(Number(hours));
+    now.setMinutes(Number(minutes));
+    now.setSeconds(0);
+    now.setMilliseconds(0);
+
+    onRegister(selectedCourse.courseId, now.toISOString());
+
+    setSelectedCourse(null);
+    setTime(getCurrentTime());
+    setOpen(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* ปุ่มที่กดแล้วเปิด Dialog */}
       <DialogTrigger>
-        <Button>ลงทะเบียน</Button>
+        <Button type="button">ลงทะเบียน</Button>
       </DialogTrigger>
 
-      {/* ฟอร์มที่แสดงออกมาเมื่อกดปุ่ม */}
       <DialogContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
             <DialogTitle>ลงทะเบียนรายวิชา</DialogTitle>
-            <DialogDescription>กรอกข้อมูลเพื่อลงทะเบียน</DialogDescription>
+            <DialogDescription>
+              กรอกข้อมูลเพื่อลงทะเบียน
+            </DialogDescription>
           </DialogHeader>
 
+          {/* วิชา */}
           <div className="space-y-2">
-            <Label htmlFor="studentId">รหัสนักศึกษา</Label>
-            <Input id="studentId" placeholder="เช่น 650610002" />
+            <Label htmlFor="course">วิชา</Label>
+
+            <select
+              id="course"
+              value={selectedCourse?.courseId ?? ""}
+              onChange={(e) => {
+                const course = availableCourses.find(
+                  (course) => course.courseId === e.target.value
+                );
+
+                setSelectedCourse(course ?? null);
+              }}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <option value="" disabled>
+                เลือกวิชา
+              </option>
+
+              {availableCourses.map((course) => (
+                <option key={course.courseId} value={course.courseId}>
+                  {course.courseId} – {course.courseTitle}
+                </option>
+              ))}
+            </select>
+
+            {availableCourses.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                ไม่มีวิชาที่สามารถลงทะเบียนได้
+              </p>
+            )}
           </div>
 
+          {/* เวลา */}
           <div className="space-y-2">
-            <Label htmlFor="fullName">ชื่อ-นามสกุล</Label>
-            <Input id="fullName" placeholder="เช่น Cillian Murphy" />
+            <Label htmlFor="enrolledAt">เลือกเวลา</Label>
+
+            <Input
+              id="enrolledAt"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+            />
           </div>
 
+          {/* ชื่อนักศึกษา */}
           <div className="space-y-2">
-            <Label htmlFor="courseId">รหัสวิชา</Label>
-            <Input id="courseId" placeholder="เช่น 261207" />
+            <Label htmlFor="studentName">ชื่อ นศ.</Label>
+
+            <Input
+              id="studentName"
+              value={`${currentStudent.firstName} ${currentStudent.lastName}`}
+              readOnly
+            />
+          </div>
+
+          {/* โปรแกรม */}
+          <div className="space-y-2">
+            <Label htmlFor="program">โปรแกรม</Label>
+
+            <Input
+              id="program"
+              value={currentStudent.program}
+              readOnly
+            />
           </div>
 
           <DialogFooter>
-            <Button type="submit">ยืนยัน</Button>
+            <Button
+              type="submit"
+              disabled={!selectedCourse}
+            >
+              ยืนยันการลงทะเบียน
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
